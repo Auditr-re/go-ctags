@@ -1,4 +1,4 @@
-module github.com/sourcegraph/go-ctags
+module github.com/audit-re/go-ctags
 
 go 1.14
 
