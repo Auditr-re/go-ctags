@@ -96,15 +96,28 @@ func New(opts Options) (Parser, error) {
 		return nil, err
 	}
 
+	// Need to check for fatal errors. Final init.Typ for initialization should
+	// be "program" but we stop at the first non error.
 	var init reply
-	if err := proc.read(&init); err != nil {
-		proc.Close()
-		return nil, err
-	}
+	for {
+		if err := proc.read(&init); err != nil {
+			proc.Close()
+			return nil, err
+		}
 
-	if init.Typ == "error" {
-		proc.Close()
-		return nil, fmt.Errorf("starting %s failed with: %s", opts.Bin, init.Message)
+		if init.Typ != "error" {
+			break
+		}
+
+		if init.Fatal {
+			proc.Close()
+			return nil, fmt.Errorf("starting %s failed with: %s", opts.Bin, init.Message)
+		} else {
+			if opts.Info != nil {
+				opts.Info.Printf("ignoring ctags initialization warning: %s", init.Message)
+			}
+			continue
+		}
 	}
 
 	return &proc, nil
